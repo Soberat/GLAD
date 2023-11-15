@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 
+from PyQt5.QtCore import QObject, pyqtSlot
 from minimalmodbus import Instrument
 
 from src.drivers.SerialDeviceBase import SerialDeviceBase
 
 
-class TempController32h8i(SerialDeviceBase):
+class TempController32h8i(SerialDeviceBase, QObject):
     @dataclass
     class InstrumentStatus:
         alarm1_status: bool
@@ -19,6 +20,7 @@ class TempController32h8i(SerialDeviceBase):
     def __init__(self, internal_id: str):
         super().__init__(internal_id)
         self.instrument = None
+        self.setpoint_value = 20
 
         self.setpoint_control_enabled = False
 
@@ -37,12 +39,18 @@ class TempController32h8i(SerialDeviceBase):
     def get_process_value(self) -> float:
         return self.instrument.read_register(1)
 
-    def set_setpoint_value(self, setpoint_value: float) -> bool:
+    @pyqtSlot()
+    def set_setpoint_value(self, setpoint_value: float = None) -> bool:
+        print("TIMEOUT")
+        if setpoint_value is None:
+            setpoint_value = self.setpoint_value
+        else:
+            self.setpoint_value = setpoint_value
+
         if self.setpoint_control_enabled:
             self.instrument.write_register(26, int(setpoint_value))
         else:
-            self.logger.error(f"Something tried to set setpoint {setpoint_value}, but control is disabled")
-            return False
+            self.instrument.write_register(26, 20)
         return True
 
     def get_setpoint_value(self) -> float:

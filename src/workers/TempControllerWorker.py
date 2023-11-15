@@ -14,5 +14,6 @@ class TempControllerWorker(GenericWorker):
 
     @pyqtSlot()
     def function_to_call_periodically(self):
+        self.device.set_setpoint_value()
         self.processValueReady.emit(self.device.get_process_value())
         self.setpointReady.emit(self.device.get_setpoint_value())
