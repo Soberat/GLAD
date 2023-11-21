@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMainWindow, QMdiArea, QAction, QMenu, QMessageBox, 
 from src.dialogs.LogViewingDialog import LogViewingDialog
 from src.dialogs.MeasurementViewingDialog import MeasurementDialog
 from src.dialogs.SettingsDialog import SettingsDialog
+from src.widgets.bldc.BLDCWidget import BLDCWidget
 from src.widgets.etc1103.ETC1103Widget import ETC1103Widget
 from src.widgets.eurotherm_32h8i.TemperatureControllerWidget import TemperatureControllerWidget
 from src.widgets.mks_mfc.MksEthWidget import MksEthWidget
@@ -77,17 +78,19 @@ class GLADMainWindow(QMainWindow):
             # StepperControllerWidget("MockStepper--842daf7e-c236-4368-9102-1a2b4a8ae9f8", mock=True),
             # WP8026ADAMWidget("MockWP8026ADAM--9f99058b-bbd3-46e7-88af-5139ca4d23dc", mock=True),
             # SR201Widget("MockSR201--5f9eebc0-5d0b-489d-b142-2c5d3bec5fc8", mock=True),
-            VGC403Widget("VGC403--bcb7c326-dff5-4a21-8732-5f220b17fffb", mock=False),
-            ETC1103Widget("ETC1103--8c55fad3-70fb-11ee-9a31-e0d4e8da970a", mock=False),
-            RX01Widget("RX01--e043db01-647c-47fb-8e92-ba44ee4bed43", mock=False),
+            BLDCWidget("MockBLDC--646b9cce-0504-4700-a7cf-8f481a2dd114", mock=True),
+            # VGC403Widget("VGC403--bcb7c326-dff5-4a21-8732-5f220b17fffb", mock=False),
+            # ETC1103Widget("ETC1103--8c55fad3-70fb-11ee-9a31-e0d4e8da970a", mock=False),
+            # RX01Widget("RX01--e043db01-647c-47fb-8e92-ba44ee4bed43", mock=False),
             # RX01Widget("RX01--f3800f60-0029-46d6-9b06-5214b9cf471b", mock=False),
-            TemperatureControllerWidget("TempController32h8i--c832a0b7-9c41-43db-91b0-6a2d3", mock=False),
-            MksEthWidget("MksEthMfc--dfe480e9-2dfc-443b-81a1-364178321974", mock=False),
-            MksEthWidget("MksEthMfc--73f5ae1a-27b7-442a-837b-abf725ce2acb", mock=False),
+            # TemperatureControllerWidget("TempController32h8i--c832a0b7-9c41-43db-91b0-6a2d3", mock=False),
+            # MksEthWidget("MksEthMfc--dfe480e9-2dfc-443b-81a1-364178321974", mock=False),
+            # MksEthWidget("MksEthMfc--73f5ae1a-27b7-442a-837b-abf725ce2acb", mock=False),
             # PD500X1Widget("PD500X1--e5beac89-e62d-4722-b1cc-c604240db7d0", mock=False),
-            StepperControllerWidget("Stepper--0b98b204-e225-424a-91f9-d2a6aeeffc25", mock=False),
+            # StepperControllerWidget("Stepper--0b98b204-e225-424a-91f9-d2a6aeeffc25", mock=False),
             # WP8026ADAMWidget("WP8026ADAM--05f87033-fa59-441f-baa1-3ed976431938", mock=False),
             # SR201Widget("SR201--82554b18-e3a3-4ac3-983b-88812b010e4f", mock=False),
+            # BLDCWidget("BLDC--13c87134-d309-4e95-9b4b-988308aba46c", mock=False),
         ]:
             # Disable the close button on every subwindow
             subwindow = self.mdi.addSubWindow(widget, Qt.WindowType.WindowMinMaxButtonsHint)
