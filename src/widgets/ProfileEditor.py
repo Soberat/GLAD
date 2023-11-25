@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from PyQt5.QtWidgets import QVBoxLayout, QWidget, QPushButton, QDoubleSpinBox, QFileDialog, \
-    QLabel, QHBoxLayout, QLayout, QScrollArea, QTimeEdit, QCheckBox, QSpinBox
+    QLabel, QHBoxLayout, QLayout, QScrollArea, QTimeEdit, QCheckBox, QSpinBox, QStyle
 from matplotlib import patches
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import Qt, QTime, QSettings
@@ -249,8 +249,6 @@ class ProfileEditor(QWidget):
         scroll.setWidget(scroll_widget)
         layout.addWidget(scroll)
 
-        self.setLayout(layout)
-
         inner_layout = QHBoxLayout()
         inner_layout.addWidget(self.interpolate_checkbox)
         inner_layout.addWidget(self.interpolate_spinbox)
@@ -262,6 +260,18 @@ class ProfileEditor(QWidget):
         inner_layout.addWidget(self.save_to_csv_button)
         inner_layout.addWidget(self.import_from_csv_button)
         layout.addLayout(inner_layout)
+
+        temp_layout = QHBoxLayout()
+        icon_label = QLabel()
+        icon_label.setPixmap(self.style().standardIcon(QStyle.SP_MessageBoxInformation).pixmap(16, 16))
+        info_label = QLabel("Editor assumes instantaneous changes, which should be accounted for by the operator")
+        temp_layout.addWidget(icon_label)
+        temp_layout.addWidget(info_label)
+        temp_layout.addStretch(1)
+
+        layout.addLayout(temp_layout)
+
+        self.setLayout(layout)
 
         self.add_point_button.clicked.connect(lambda _: self._add_spinbox_pair())
 
