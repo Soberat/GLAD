@@ -43,6 +43,11 @@ class TemperatureControllerWidget(DeviceWidgetBase):
         self.setpoint_x_values = []
         self.setpoint_y_values = []
 
+        self.profile_status_label = QLabel("Profile inactive")
+        self.profile_status_timer = QTimer()
+        self.profile_status_timer.timeout.connect(self.on_profile_status_timer_timeout)
+        self.profile_status_timer.start(15000)
+
         self.plot_widget = PlotWidgetWithCrosshair(internal_id, has_profile=True)
         self.plot_widget.setMaximumHeight(450)
 
@@ -110,6 +115,7 @@ class TemperatureControllerWidget(DeviceWidgetBase):
         self.control_panel_widget.setMinimumHeight(300)
         self.control_panel_widget.setMaximumHeight(450)
 
+        self.layout().addWidget(self.profile_status_label)
         self.layout().addWidget(self.control_panel_widget)
 
         self.layout().addWidget(self.collapse_editor_button)
@@ -133,8 +139,17 @@ class TemperatureControllerWidget(DeviceWidgetBase):
     def clear_measured_values(self):
         self.temperature_x_values = []
         self.temperature_y_values = []
+        self.plot_widget.measured_values_plot.clear()
 
-        self.clear_plot_data(clear_measured=True, clear_profile=False)
+        self.setpoint_x_values = []
+        self.setpoint_y_values = []
+        self.setpoint_plot_data.clear()
+
+    def on_profile_status_timer_timeout(self):
+        if self.is_profile_executing:
+            self.profile_status_label.setText(f"Next point in {self.profile_editor.profile_plot.float_to_mm_ss(self.profile_timer.remainingTime()/60000)}")
+        else:
+            self.profile_status_label.setText("Profile inactive")
 
     def open_start_configuration_dialog(self):
         dialog = StartProfileDialog()

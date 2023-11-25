@@ -59,6 +59,11 @@ class RX01Widget(DeviceWidgetBase):
         self.power_x_values = []
         self.power_y_values = []
 
+        self.profile_status_label = QLabel("Profile inactive")
+        self.profile_status_timer = QTimer()
+        self.profile_status_timer.timeout.connect(self.on_profile_status_timer_timeout)
+        self.profile_status_timer.start(15000)
+
         # Set up fonts
         label_font = QFont()
         label_font.setPointSize(18)
@@ -167,6 +172,7 @@ class RX01Widget(DeviceWidgetBase):
         self.control_panel_widget.setLayout(top_layout)
         self.control_panel_widget.setMinimumSize(650, 400)
 
+        self.layout().addWidget(self.profile_status_label)
         self.layout().addWidget(self.control_panel_widget)
         self.layout().addWidget(self.collapse_editor_button)
         self.layout().addWidget(self.profile_editor)
@@ -187,6 +193,12 @@ class RX01Widget(DeviceWidgetBase):
         self.power_y_values = []
 
         self.plot_widget.measured_values_plot.setData([], [])
+
+    def on_profile_status_timer_timeout(self):
+        if self.is_profile_executing:
+            self.profile_status_label.setText(f"Next point in {self.profile_editor.profile_plot.float_to_mm_ss(self.profile_timer.remainingTime()/60000)}")
+        else:
+            self.profile_status_label.setText("Profile inactive")
 
     def open_start_configuration_dialog(self):
         dialog = StartProfileDialog()
