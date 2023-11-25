@@ -1,7 +1,7 @@
 from typing import Type, Tuple, List, Dict
 
 from PyQt5.QtCore import QSettings, QThread, pyqtSignal
-from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QSpinBox, QFrame
+from PyQt5.QtWidgets import QVBoxLayout, QLineEdit, QSpinBox, QFrame, QPushButton
 
 from src.drivers.SerialDeviceBase import SerialDeviceBase
 from src.widgets.settings.PlotConfigurationGroupBox import PlotConfigurationGroupBox
@@ -112,10 +112,14 @@ class DeviceWidgetBase(QWidget):
         self.worker.task_failed.connect(self.status_indicator.on_negative_status)
         self.worker.task_successful.connect(self.status_indicator.on_positive_status)
 
+        self.wipe_measurements_button = QPushButton("Wipe measurements")
+        self.wipe_measurements_button.clicked.connect(self.clear_measured_values)
+
         temp_layout = QHBoxLayout()
         temp_layout.addWidget(self.main_label)
         temp_layout.addWidget(self.status_indicator)
         temp_layout.addStretch(1)
+        temp_layout.addWidget(self.wipe_measurements_button)
 
         self.layout().addLayout(temp_layout)
 
