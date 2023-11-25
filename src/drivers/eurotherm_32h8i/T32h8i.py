@@ -41,7 +41,6 @@ class TempController32h8i(SerialDeviceBase, QObject):
 
     @pyqtSlot()
     def set_setpoint_value(self, setpoint_value: float = None) -> bool:
-        print("TIMEOUT")
         if setpoint_value is None:
             setpoint_value = self.setpoint_value
         else:
