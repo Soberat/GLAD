@@ -1,10 +1,7 @@
-from typing import Type
-
 from PyQt5.QtWidgets import QPushButton, QSpinBox, QHBoxLayout
 
 from src.widgets.DeviceWidgetBase import DeviceWidgetBase
 from src.workers.BLDCWorker import BLDCWorker
-from src.workers.GenericWorker import GenericWorker
 
 
 class BLDCWidget(DeviceWidgetBase):
@@ -25,6 +22,7 @@ class BLDCWidget(DeviceWidgetBase):
 
         self.layout().addLayout(temp_layout)
         self.layout().addWidget(self.dac_val_spinbox)
+        self.layout().addStretch(1)
 
     def on_direction_left_button_clicked(self):
         self.worker.add_task(self.worker.device.set_direction_left)
