@@ -1,5 +1,7 @@
 import time
 
+from PyQt5.QtCore import pyqtSlot
+
 from src.drivers.eurotherm_32h8i.T32h8i import TempController32h8i
 
 
@@ -45,7 +47,13 @@ class MockTempController32h8i(TempController32h8i):
         # Return the value
         return self.current_process_value
 
-    def set_setpoint_value(self, setpoint_value: float) -> bool:
+    @pyqtSlot()
+    def set_setpoint_value(self, setpoint_value: float = None) -> bool:
+        if setpoint_value is None:
+            setpoint_value = self.target_process_value
+        else:
+            self.setpoint_value = setpoint_value
+
         # Update the target when we set a new setpoint
         if self.setpoint_control_enabled:
             self.target_process_value = setpoint_value
