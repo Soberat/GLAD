@@ -9,6 +9,7 @@ from src.workers.ETC1103Worker import ETC1103Worker
 class ETC1103Widget(DeviceWidgetBase):
     def __init__(self, internal_id: str, mock: bool = False):
         super().__init__(internal_id, ETC1103Worker, mock)
+        self.wipe_measurements_button.hide()
 
         self.worker.statusReady.connect(self._on_status_ready)
         self.worker.operationalTimeReady.connect(self._on_operational_time_ready)
