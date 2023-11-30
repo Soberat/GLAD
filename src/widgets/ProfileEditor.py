@@ -1,4 +1,6 @@
 import csv
+import logging
+import os
 from types import NoneType
 from typing import Union, List, Tuple, Dict
 
@@ -458,11 +460,24 @@ class ProfileEditor(QWidget):
         if not filename:
             return
 
-        with open(filename, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["X (hh:mm:ss)", f"Y ({self.y_spinbox_suffix})"])
-            writer.writerows([(self.x_spin_boxes[i].time().toString(), self.y_spin_boxes[i].value()) for i in
-                              range(len(self.x_spin_boxes))])
+        # Flag to remove file after closing if writing failed
+        remove_file_flag = False
+        exception = None
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+            try:
+                writer = csv.writer(csvfile)
+                writer.writerow(["X (hh:mm:ss)", f"Y ({self.y_spinbox_suffix})"])
+                writer.writerows([(self.x_spin_boxes[i].time().toString(), self.y_spin_boxes[i].value()) for i in
+                                  range(len(self.x_spin_boxes))])
+            except Exception as e:
+                logging.error(f"Error while saving to CSV: {e}")
+                remove_file_flag = True
+                exception = e
+
+        if remove_file_flag and exception:
+            # Remove the file, and reraise the exception to inform the user of the error
+            os.remove(filename)
+            raise ValueError(f"Error while saving to CSV: {exception}")
 
     def import_from_csv(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Open profile CSV", "", "CSV Files (*.csv);;All Files (*)")
@@ -473,6 +488,9 @@ class ProfileEditor(QWidget):
         data = np.genfromtxt(filePath, delimiter=",", skip_header=1, encoding="utf-8", dtype=None)
         x_data = [row[0] for row in data]
         y_data = [row[1] for row in data]
+
+        if len(x_data) != len(y_data) or len(x_data) == 0 or len(y_data) == 0:
+            raise ValueError("Input profile is empty or amount of values does not match")
 
         # Cap off values out of bounds
         y_data = np.clip(y_data, self.lower_y_bound, self.upper_y_bound)
