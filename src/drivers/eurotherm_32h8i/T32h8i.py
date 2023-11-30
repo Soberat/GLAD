@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal, QTimer
 from minimalmodbus import Instrument
 
 from src.drivers.SerialDeviceBase import SerialDeviceBase
 
 
 class TempController32h8i(SerialDeviceBase, QObject):
+    setpointRefreshNeeded = pyqtSignal()
+
     @dataclass
     class InstrumentStatus:
         alarm1_status: bool
@@ -18,11 +20,16 @@ class TempController32h8i(SerialDeviceBase, QObject):
         new_alarm_status: bool
 
     def __init__(self, internal_id: str):
-        super().__init__(internal_id)
+        QObject.__init__(self)
+        SerialDeviceBase.__init__(self, internal_id)
         self.instrument = None
         self.setpoint_value = 20
 
         self.setpoint_control_enabled = False
+
+        self.setpoint_refresh_timer = QTimer()
+        self.setpoint_refresh_timer.timeout.connect(self.setpointRefreshNeeded.emit)
+        self.setpoint_refresh_timer.start(2500)
 
     def connect(self):
         super().connect()

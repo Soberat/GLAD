@@ -12,8 +12,13 @@ class TempControllerWorker(GenericWorker):
     DEVICE_CLASS = TempController32h8i
     MOCK_DEVICE_CLASS = MockTempController32h8i
 
+    def __init__(self, internal_id: str, mock: bool):
+        super().__init__(internal_id, mock)
+        self.device.setpointRefreshNeeded.connect(
+            lambda: self.add_task(self.device.set_setpoint_value)
+        )
+
     @pyqtSlot()
     def function_to_call_periodically(self):
-        self.device.set_setpoint_value()
         self.processValueReady.emit(self.device.get_process_value())
         self.setpointReady.emit(self.device.get_setpoint_value())
