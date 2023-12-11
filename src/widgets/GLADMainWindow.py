@@ -2,6 +2,7 @@ import logging
 from typing import Union
 
 from PyQt5.QtCore import pyqtSignal, Qt, QSettings, QRect
+from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import QMainWindow, QMdiArea, QAction, QMenu, QMessageBox, QInputDialog, QErrorMessage
 
 from src.dialogs.LogViewingDialog import LogViewingDialog
@@ -103,8 +104,22 @@ class GLADMainWindow(QMainWindow):
 
         self.layoutListUpdated.connect(self._update_layout_list)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent):
         self.save_geometries()
+
+        # Check if a 32h8i widget is defined, and if yes, warn the user that the setpoint might change
+        if any([isinstance(subwindow.widget(), TemperatureControllerWidget) for subwindow in self.mdi.subWindowList()]):
+            result = QMessageBox.question(
+                self,
+                "Ensure 32h8i panel setpoint",
+                "When you close the application, the 32h8i heater will revert to the setpoint on the panel. "
+                "Close the application?"
+            )
+
+            if result == QMessageBox.No:
+                event.ignore()
+                return
+
         event.accept()
 
     def _update_layout_list(self):
