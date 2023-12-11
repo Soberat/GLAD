@@ -112,7 +112,7 @@ class GLADMainWindow(QMainWindow):
             result = QMessageBox.question(
                 self,
                 "Ensure 32h8i panel setpoint",
-                "When you close the application, the 32h8i heater will revert to the setpoint on the panel. "
+                "When you close the application, the 32h8i heater will revert to the setpoint on the physical panel. "
                 "Close the application?"
             )
 
