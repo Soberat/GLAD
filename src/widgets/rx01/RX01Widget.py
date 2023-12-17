@@ -349,8 +349,6 @@ class RX01Widget(DeviceWidgetBase):
 
         self.is_profile_executing = False
 
-        self.worker.add_task(self.worker.device.disable_rf_output_ramping)
-
         logging.info("Profile finished")
 
     def _on_forward_power_ready(self, forward_power: float):
