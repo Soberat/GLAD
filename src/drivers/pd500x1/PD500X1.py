@@ -1,5 +1,5 @@
 from typing import Union
-
+import re
 
 from src.drivers.SerialDeviceBase import SerialDeviceBase
 
@@ -14,10 +14,34 @@ class PD500X1(SerialDeviceBase):
         "Error 15": "Data out of range (Check supply min-max settings)"
     }
 
-    def __write_and_read(self, command: str, expected_response: Union[str, None] = "OK") -> Union[str, bool]:
+    def __init__(self, internal_id: str):
+        super().__init__(internal_id)
+        self.dc_output_enabled = False
+
+    def connect(self):
+        """
+        Connects to the device by closing the current connection (if open) and then reopening it.
+        + PD500X1 - establish serial control
+
+        :returns nothing
+        :raises any exception that can happen during connecting, e.g. SerialException
+        """
+        if self.serial and self.serial.is_open:  # If connection exists and is open
+            self.logger.info(f"Closing existing connection for {self.device_id()}")
+            self.serial.close()
+
+        self.logger.info(f"Creating serial for {self.device_id()}")
+        self.serial = self.create_serial_from_settings()  # Create a new connection from settings
+
+        if self.serial and self.serial.port is None:
+            raise ValueError(f"No port specified for {self.device_id()}")
+
+        self.__write_and_read("S01")
+
+    def __write_and_read(self, command: str, expected_response: Union[str, None] = "OK\r\n") -> Union[str, bool]:
         self.logger.debug(f"Writing {command}")
         self.serial.write(f"{command}\r".encode())
-        response = self.serial.read_until(b"\r\n").decode().replace("\r\n", "")
+        response = self.serial.read(20).decode()
 
         self.logger.debug(f"Response for {command}: {response}")
 
@@ -47,10 +71,16 @@ class PD500X1(SerialDeviceBase):
         return self.__write_and_read("S01")
 
     def enable_output(self):
-        return self.__write_and_read("S02")
+        if self.__write_and_read("S02"):
+            self.dc_output_enabled = True
+            return True
+        return False
 
     def disable_output(self):
-        return self.__write_and_read("S03")
+        if self.__write_and_read("S03"):
+            self.dc_output_enabled = True
+            return True
+        return False
 
     def set_active_target_number(self, target_number: int):
         if target_number not in list(range(1, 8, 1)):
@@ -166,7 +196,9 @@ class PD500X1(SerialDeviceBase):
         return self.__write_and_read("Q04", None)
 
     def read_actual_power_in_Watts(self):
-        return self.__write_and_read("Q05", None)
+        x = self.__write_and_read("Q05", None)
+        print(f"Actual power: {x}")
+        return float(re.search(r"([0-9]+\.[0-9]+)\s*Watts", x).group(1))
 
     def read_actual_current_in_amps(self):
         return self.__write_and_read("Q06", None)
@@ -181,7 +213,9 @@ class PD500X1(SerialDeviceBase):
         return self.__write_and_read("Q09", None)
 
     def read_active_target_power_setpoint_in_Watts(self):
-        return self.__write_and_read("Q10", None)
+        x = self.__write_and_read("Q10", None)
+        print(f"Active target power: {x}")
+        return float(re.search(r"([0-9]+\.[0-9]+)\sWatts", x).group(1))
 
     def read_active_target_current_setpoint_in_amps(self):
         return self.__write_and_read("Q11", None)
