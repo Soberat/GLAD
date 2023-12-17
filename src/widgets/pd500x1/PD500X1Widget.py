@@ -68,11 +68,11 @@ class PD500X1Widget(DeviceWidgetBase):
         self.power_setpoint_spinbox.setSuffix(" W")
         self.power_setpoint_spinbox.editingFinished.connect(self._on_power_setpoint_spinbox_editing_finished)
 
-        # RF output toggle button
-        self.rf_output_button = QPushButton("ENABLE RF")
-        self.rf_output_button.setFont(button_font)
-        self.rf_output_button.setFixedHeight(50)
-        self.rf_output_button.clicked.connect(self._on_rf_output_button_clicked)
+        # DC output toggle button
+        self.dc_output_button = QPushButton("ENABLE DC")
+        self.dc_output_button.setFont(button_font)
+        self.dc_output_button.setFixedHeight(50)
+        self.dc_output_button.clicked.connect(self._on_dc_output_button_clicked)
 
         self.plot_widget = PlotWidgetWithCrosshair(internal_id, has_profile=True)
         self.plot_widget.setMinimumHeight(200)
@@ -102,7 +102,7 @@ class PD500X1Widget(DeviceWidgetBase):
         left_layout = QVBoxLayout()
 
         left_layout.addWidget(measurement_group_box)
-        left_layout.addWidget(self.rf_output_button)
+        left_layout.addWidget(self.dc_output_button)
         left_layout.addWidget(self.power_setpoint_spinbox)
 
         top_layout = QHBoxLayout()
@@ -141,13 +141,13 @@ class PD500X1Widget(DeviceWidgetBase):
         else:
             self.profile_status_label.setText("Profile inactive")
 
-    def _on_rf_output_button_clicked(self):
-        if self.worker.device.rf_output_enabled:
-            self.worker.add_task(self.worker.device.disable_rf_output)
-            self.rf_output_button.setText("ENABLE RF")
+    def _on_dc_output_button_clicked(self):
+        if self.worker.device.dc_output_enabled:
+            self.worker.add_task(self.worker.device.disable_output)
+            self.dc_output_button.setText("ENABLE DC")
         else:
-            self.worker.add_task(self.worker.device.enable_rf_output)
-            self.rf_output_button.setText("DISABLE RF")
+            self.worker.add_task(self.worker.device.enable_output)
+            self.dc_output_button.setText("DISABLE DC")
 
     def _on_collapse_editor_button_clicked(self):
         if not self.profile_editor.isHidden():
@@ -235,9 +235,10 @@ class PD500X1Widget(DeviceWidgetBase):
         self.profile_action_button.clicked.disconnect(self.open_start_configuration_dialog)
         self.profile_action_button.clicked.connect(self.stop_power_profile)
 
-        # Enable RF output, firstly at 0
-        self.worker.add_task(lambda: self.worker.device.set_power_setpoint_and_enable_rf_output(0))
-        self.rf_output_button.setText("DISABLE RF")
+        # Enable DC output, firstly at 0
+        self.worker.add_task(lambda: self.worker.device.set_active_target_power_setpoint(0))
+        self.worker.add_task(self.worker.device.enable_output)
+        self.dc_output_button.setText("DISABLE DC")
 
         # Restart the timer to have a clean slate
         self.profile_timer = QTimer()
@@ -257,7 +258,7 @@ class PD500X1Widget(DeviceWidgetBase):
         self.power_setpoint_spinbox.blockSignals(False)
 
         self.worker.add_task(lambda: self.worker.device.set_active_target_ramp_time(next_x * 60))
-        logging.info(f"Setting RF output ramp time = {next_x * 60} seconds")
+        logging.info(f"Setting DC output ramp time = {next_x * 60} seconds")
 
         logging.info(f"Setting {next_y} W, next setpoint in {int(next_x * 60 * 1000)} msec")
         self.worker.add_task(lambda: self.worker.device.set_active_target_power_setpoint(next_y))
