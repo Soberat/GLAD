@@ -74,6 +74,12 @@ class PD500X1Widget(DeviceWidgetBase):
         self.dc_output_button.setFixedHeight(50)
         self.dc_output_button.clicked.connect(self._on_dc_output_button_clicked)
 
+        # RF stop/zero button
+        self.stop_output_button = QPushButton("STOP OUTPUT")
+        self.stop_output_button.setFont(button_font)
+        self.stop_output_button.setFixedHeight(50)
+        self.stop_output_button.clicked.connect(self._on_stop_output_button_clicked)
+
         self.plot_widget = PlotWidgetWithCrosshair(internal_id, has_profile=True)
         self.plot_widget.setMinimumHeight(200)
         self.plot_widget.setMaximumHeight(400)
@@ -103,6 +109,7 @@ class PD500X1Widget(DeviceWidgetBase):
 
         left_layout.addWidget(measurement_group_box)
         left_layout.addWidget(self.dc_output_button)
+        left_layout.addWidget(self.stop_output_button)
         left_layout.addWidget(self.power_setpoint_spinbox)
 
         top_layout = QHBoxLayout()
@@ -148,6 +155,13 @@ class PD500X1Widget(DeviceWidgetBase):
         else:
             self.worker.add_task(self.worker.device.enable_output)
             self.dc_output_button.setText("DISABLE DC")
+
+    def _on_stop_output_button_clicked(self):
+        self.worker.add_task(self.worker.device.disable_output)
+        self.worker.add_task(lambda: self.worker.device.set_active_target_power_setpoint(0))
+        self.power_setpoint_spinbox.blockSignals(True)
+        self.power_setpoint_spinbox.setValue(0)
+        self.power_setpoint_spinbox.blockSignals(False)
 
     def _on_collapse_editor_button_clicked(self):
         if not self.profile_editor.isHidden():

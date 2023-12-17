@@ -100,13 +100,17 @@ class RX01Widget(DeviceWidgetBase):
         self.rf_output_button.setFixedHeight(50)
         self.rf_output_button.clicked.connect(self._on_rf_output_button_clicked)
 
-        # Tune preset spinbox
-        self.tune_spinbox = QSpinBox()
-        self.tune_spinbox.setFont(spinbox_font)
-        self.tune_spinbox.setRange(0, 100)
-        self.tune_spinbox.setPrefix("Tune preset ")
-        self.tune_spinbox.setSuffix(" %")
-        self.tune_spinbox.editingFinished.connect(self._on_tune_spinbox_editing_finished)
+        # Automatic/manual tune/load toggle button
+        self.auto_manual_button = QPushButton("ASSERT AUTO")
+        self.auto_manual_button.setFont(button_font)
+        self.auto_manual_button.setFixedHeight(50)
+        self.auto_manual_button.clicked.connect(self._on_auto_manual_button_clicked)
+
+        # RF stop/zero button
+        self.stop_output_button = QPushButton("STOP OUTPUT")
+        self.stop_output_button.setFont(button_font)
+        self.stop_output_button.setFixedHeight(50)
+        self.stop_output_button.clicked.connect(self._on_stop_output_button_clicked)
 
         # Load preset spinbox
         self.load_spinbox = QSpinBox()
@@ -116,11 +120,13 @@ class RX01Widget(DeviceWidgetBase):
         self.load_spinbox.setSuffix(" %")
         self.load_spinbox.editingFinished.connect(self._on_load_spinbox_editing_finished)
 
-        # Automatic/manual tune/load toggle button
-        self.auto_manual_button = QPushButton("ASSERT AUTO")
-        self.auto_manual_button.setFont(button_font)
-        self.auto_manual_button.setFixedHeight(50)
-        self.auto_manual_button.clicked.connect(self._on_auto_manual_button_clicked)
+        # Tune preset spinbox
+        self.tune_spinbox = QSpinBox()
+        self.tune_spinbox.setFont(spinbox_font)
+        self.tune_spinbox.setRange(0, 100)
+        self.tune_spinbox.setPrefix("Tune preset ")
+        self.tune_spinbox.setSuffix(" %")
+        self.tune_spinbox.editingFinished.connect(self._on_tune_spinbox_editing_finished)
 
         self.plot_widget = PlotWidgetWithCrosshair(internal_id, has_profile=True)
         self.plot_widget.setMaximumHeight(450)
@@ -159,6 +165,7 @@ class RX01Widget(DeviceWidgetBase):
         left_layout.addWidget(measurement_group_box)
         left_layout.addWidget(self.rf_output_button)
         left_layout.addWidget(self.auto_manual_button)
+        left_layout.addWidget(self.stop_output_button)
         left_layout.addWidget(self.power_setpoint_spinbox)
         left_layout.addWidget(self.load_spinbox)
         left_layout.addWidget(self.tune_spinbox)
@@ -404,6 +411,13 @@ class RX01Widget(DeviceWidgetBase):
             self.mc2_worker.add_task(self.mc2_worker.device.set_mc2_tune_cap_man)
             self.mc2_worker.add_task(self.mc2_worker.device.set_mc2_load_cap_man)
             self.auto_manual_button.setText("ENABLE AUTO")
+
+    def _on_stop_output_button_clicked(self):
+        self.worker.add_task(self.worker.device.disable_rf_output)
+        self.worker.add_task(lambda: self.worker.device.set_power_setpoint(0))
+        self.power_setpoint_spinbox.blockSignals(True)
+        self.power_setpoint_spinbox.setValue(0)
+        self.power_setpoint_spinbox.blockSignals(False)
 
     def _on_collapse_editor_button_clicked(self):
         if not self.profile_editor.isHidden():
