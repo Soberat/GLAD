@@ -129,9 +129,9 @@ class MksEthMfc(DeviceBase):
         if is_open is None or is_closed is None:
             raise NothingReturnedError("Nothing returned by the MFC on read")
 
-        if is_open:
+        if is_open[0]:
             return MksEthMfcValveState.OPEN
-        elif is_closed:
+        elif is_closed[0]:
             return MksEthMfcValveState.CLOSED
         else:
             return MksEthMfcValveState.NORMAL
