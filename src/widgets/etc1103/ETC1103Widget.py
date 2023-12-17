@@ -54,7 +54,7 @@ class ETC1103Widget(DeviceWidgetBase):
         return
 
     def _on_start_button_clicked(self):
-        self.worker.add_task(self.worker.device.startpump)
+        self.worker.add_task(self.worker.device.start_pump)
 
     def _on_stop_button_clicked(self):
         self.worker.add_task(self.worker.device.stop_pump)
