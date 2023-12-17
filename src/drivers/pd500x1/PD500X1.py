@@ -43,7 +43,7 @@ class PD500X1(SerialDeviceBase):
         self.serial.write(f"{command}\r".encode())
         response = self.serial.read(20).decode()
 
-        self.logger.debug(f"Response for {command}: {response}")
+        self.logger.debug(f"Response for {command}: '{response.encode()}'")
 
         if not expected_response:
             return response

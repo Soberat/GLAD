@@ -45,7 +45,7 @@ class RX01(SerialDeviceBase):
         self.serial.write(f"{command}\r".encode())
         response = self.serial.read_until(b"\r").decode()
 
-        self.logger.debug(f"Response for {command}: {response}")
+        self.logger.debug(f"Response for {command}: '{response.encode()}'")
 
         if response == "N\r":
             return False
