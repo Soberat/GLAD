@@ -333,6 +333,10 @@ class RX01Widget(DeviceWidgetBase):
         # Disable RF output ramping
         self.worker.add_task(self.worker.device.disable_rf_output_ramping)
 
+        # Disable RF output and set setpoint to 0W
+        self.worker.add_task(self.worker.device.disable_rf_output)
+        self.worker.add_task(lambda: self.worker.device.set_power_setpoint(0))
+
         self.profile_editor.setEnabled(True)
         self.profile_action_button.setText("Start profile")
         try:

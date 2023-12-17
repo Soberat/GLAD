@@ -284,6 +284,10 @@ class PD500X1Widget(DeviceWidgetBase):
         # Disable ramping
         self.worker.add_task(lambda: self.worker.device.set_active_target_ramp_time(0))
 
+        # Disable DC output and set setpoint to 0W
+        self.worker.add_task(self.worker.device.disable_output)
+        self.worker.add_task(lambda: self.worker.device.set_active_target_power_setpoint(0))
+
         self.profile_editor.setEnabled(True)
         self.profile_action_button.setText("Start profile")
         try:
