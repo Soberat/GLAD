@@ -104,11 +104,21 @@ class RX01(SerialDeviceBase):
         return self.__write_and_read(f"{setpoint_in_watts} W")
 
     def disable_power_and_rf_output(self):
-        return self.__write_and_read("WS")
+        status = self.__write_and_read("WS") 
+
+        if status:
+            self.rf_output_enabled = False
+
+        return status
 
     def set_power_setpoint_and_enable_rf_output(self, setpoint_in_watts: int):
         assert setpoint_in_watts <= 9999
-        return self.__write_and_read(f"{setpoint_in_watts} WG", "\r\r")
+        status = self.__write_and_read(f"{setpoint_in_watts} WG", "\r\r")
+
+        if status:
+            self.rf_output_enabled = False
+
+        return status
 
     def set_voltage_setpoint(self, voltage_in_volts: int):
         assert voltage_in_volts <= 9999
@@ -200,10 +210,20 @@ class RX01(SerialDeviceBase):
         return self.__write_and_read("FX")
 
     def enable_rf_output(self):
-        return self.__write_and_read("G")
+        status = self.__write_and_read("G") 
+        
+        if status:
+            self.rf_output_enabled = True
+        
+        return status
 
     def disable_rf_output(self):
-        return self.__write_and_read("S")
+        status = self.__write_and_read("S") 
+        
+        if status:
+            self.rf_output_enabled = False
+        
+        return status
 
     def enable_rf_output_ramping(self):
         return self.__write_and_read("EU")
