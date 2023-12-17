@@ -59,8 +59,7 @@ class ETC1103(SerialDeviceBase):
             return response
 
         if response != f"{expected_response}\r":
-            self.logger.error(f"Unexpected response for command {command}: '{response}'")
-            return False
+            raise ValueError(f"Unexpected response for command {command}: '{response}'")
 
         return True
 

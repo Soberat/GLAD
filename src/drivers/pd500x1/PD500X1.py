@@ -28,8 +28,7 @@ class PD500X1(SerialDeviceBase):
             return self.ERROR_CODES[response]
 
         if response != expected_response:
-            self.logger.warning(f"Unexpected response for command {command}: {response}")
-            return False
+            raise ValueError(f"Unexpected response for command {command}: '{response}'")
 
         return True
 

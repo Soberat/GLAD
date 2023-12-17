@@ -54,8 +54,7 @@ class RX01(SerialDeviceBase):
             return response
 
         if response != expected_response:
-            self.logger.warning(f"Unexpected response for command {command}: {response}")
-            return False
+            raise ValueError(f"Unexpected response for command {command}: '{response}'")
 
         return True
 

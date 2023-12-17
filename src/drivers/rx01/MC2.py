@@ -48,8 +48,7 @@ class MC2(SerialDeviceBase):
             return response
 
         if response != expected_response:
-            self.logger.warning(f"Unexpected response for command {command}: {response}")
-            return False
+            raise ValueError(f"Unexpected response for command {command}: '{response}'")
 
     def get_mc2_load_cap_preset_position(self):
         return int(self.__write_and_read("LPS", None))
