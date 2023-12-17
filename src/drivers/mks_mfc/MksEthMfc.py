@@ -38,7 +38,13 @@ class MksEthMfc(DeviceBase):
 
     def connect(self):
         if not self.is_connected():
-            return self.modbus_client.open()
+            status = self.modbus_client.open()
+
+            if not status:
+                return status
+
+            self.logger.info("MKS connected, closing valve")
+            self.set_valve_state(MksEthMfcValveState.CLOSED)
 
     def disconnect(self):
         if self.modbus_client.is_open:
