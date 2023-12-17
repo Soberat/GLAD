@@ -14,4 +14,5 @@ class MksEthMfcWorker(GenericWorker):
 
     @pyqtSlot()
     def function_to_call_periodically(self):
+        self.valveStateReady.emit(self.device.get_valve_state())
         self.flowValueReady.emit(self.device.get_flow())
