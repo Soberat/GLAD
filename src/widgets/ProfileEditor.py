@@ -210,7 +210,7 @@ class ProfileEditor(QWidget):
         self.import_from_csv_button = QPushButton("Import from CSV", self)
 
         self.x_spin_boxes: List[QTimeEdit] = []
-        self.y_spin_boxes: List[QDoubleSpinBox] = []
+        self.y_inputs: List[QDoubleSpinBox] = []
 
         self.profile_plot = ProfilePlot(
             internal_id,
@@ -234,7 +234,7 @@ class ProfileEditor(QWidget):
 
         # Add initial spin boxes with sample data
         for i in range(len(x_data)):
-            self._add_spinbox_pair(x_data[i], y_data[i])
+            self._add_input_pair(x_data[i], y_data[i])
 
         # Create the scroll area and a widget for it
         scroll = QScrollArea(self)
@@ -275,7 +275,7 @@ class ProfileEditor(QWidget):
 
         self.setLayout(layout)
 
-        self.add_point_button.clicked.connect(lambda _: self._add_spinbox_pair())
+        self.add_point_button.clicked.connect(lambda _: self._add_input_pair())
 
         self.interpolate_spinbox.valueChanged.connect(self._on_interpolation_value_changed)
         self.interpolate_checkbox.stateChanged.connect(self._on_interpolation_state_changed)
@@ -337,7 +337,7 @@ class ProfileEditor(QWidget):
             self._update_interpolated_plot()
         self._update_plot()
 
-    def _add_spinbox_pair(
+    def _add_input_pair(
             self,
             default_x: Union[QTime, NoneType] = QTime(0, 1),
             default_y: Union[float, NoneType] = None
@@ -366,14 +366,14 @@ class ProfileEditor(QWidget):
         # Get the default y value, which will be self.lower_y_bound for the first spinbox,
         # and the previous spinbox value for other cases
         if default_y is None:
-            default_y = self.lower_y_bound if not self.y_spin_boxes else self.y_spin_boxes[-1].value()
+            default_y = self.lower_y_bound if not self.y_inputs else self.y_inputs[-1].value()
         y_spinbox.setValue(default_y)
 
         # Setting the constraints for the y_spinbox
         y_spinbox.setRange(self.lower_y_bound, self.upper_y_bound)
 
         self.x_spin_boxes.append(x_spinbox)
-        self.y_spin_boxes.append(y_spinbox)
+        self.y_inputs.append(y_spinbox)
 
         # Add the remove button to each pair
         remove_button = QPushButton("-")
@@ -397,7 +397,7 @@ class ProfileEditor(QWidget):
         y_spinbox.valueChanged.connect(self._on_spinbox_value_changed)
 
         # Set a new minimum for the interpolation spinbox
-        self.interpolate_spinbox.setMinimum(len(self.y_spin_boxes) + 1)
+        self.interpolate_spinbox.setMinimum(len(self.y_inputs) + 1)
         self._update_interpolated_values()
         self._update_interpolated_plot()
 
@@ -440,14 +440,14 @@ class ProfileEditor(QWidget):
         self._update_interpolated_plot()
 
     def _update_interpolated_values(self):
-        if not self.x_spin_boxes or not self.y_spin_boxes:
+        if not self.x_spin_boxes or not self.y_inputs:
             return
 
         # Get the current data that needs to be interpolated
         x_data = [sb.time() for sb in self.x_spin_boxes]
         # Convert QTimes into milliseconds for QTimers
         x_data = [t.hour() * 60 + t.minute() + t.second() / 60 for t in x_data]
-        y_data = [sb.value() for sb in self.y_spin_boxes]
+        y_data = [sb.value() for sb in self.y_inputs]
 
         absolute_x = [sum(x_data[:i]) for i in range(0, len(x_data))]
 
@@ -467,7 +467,7 @@ class ProfileEditor(QWidget):
             try:
                 writer = csv.writer(csvfile)
                 writer.writerow(["X (hh:mm:ss)", f"Y ({self.y_spinbox_suffix})"])
-                writer.writerows([(self.x_spin_boxes[i].time().toString(), self.y_spin_boxes[i].value()) for i in
+                writer.writerows([(self.x_spin_boxes[i].time().toString(), self.y_inputs[i].value()) for i in
                                   range(len(self.x_spin_boxes))])
             except Exception as e:
                 logging.error(f"Error while saving to CSV: {e}")
@@ -503,7 +503,7 @@ class ProfileEditor(QWidget):
             # Convert the string time into a QTime instance
             hh, mm, ss = (int(v) for v in x.split(sep=":"))
             x_qtime = QTime(hh, mm, ss)
-            self._add_spinbox_pair(x_qtime, y)
+            self._add_input_pair(x_qtime, y)
 
         # Redraw the plot
         self._update_plot()
@@ -513,7 +513,7 @@ class ProfileEditor(QWidget):
     def _update_plot(self):
         # Get the user input from spinboxes
         x_values = [spinbox.time() for spinbox in self.x_spin_boxes]
-        y_values = [spinbox.value() for spinbox in self.y_spin_boxes]
+        y_values = [spinbox.value() for spinbox in self.y_inputs]
 
         # Every spinbox pair is represented by two points on the plot - the start and end
         absolute_x_values = []
@@ -582,7 +582,7 @@ class ProfileEditor(QWidget):
 
         # Remove data from lists and update the plot
         self.x_spin_boxes.pop(calling_layout.pair_index - 1).deleteLater()
-        self.y_spin_boxes.pop(calling_layout.pair_index - 1).deleteLater()
+        self.y_inputs.pop(calling_layout.pair_index - 1).deleteLater()
 
         # Remove the text annotation for the deleted point
         self.profile_plot.text_annotations[calling_layout.pair_index - 1].set_visible(False)
@@ -619,7 +619,7 @@ class ProfileEditor(QWidget):
         else:
             return (
                 [self._qtimeedit_time_to_minutes(sb.time()) for sb in self.x_spin_boxes],
-                [sb.value() for sb in self.y_spin_boxes]
+                [sb.value() for sb in self.y_inputs]
             )
 
     def get_profile_data_on_plot(self) -> List[Tuple[float, float]]:

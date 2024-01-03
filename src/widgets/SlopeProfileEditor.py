@@ -3,15 +3,15 @@ from typing import Union, Tuple, List
 
 import numpy as np
 from PyQt5.QtCore import QTime, Qt
-from PyQt5.QtWidgets import QLabel, QTimeEdit, QDoubleSpinBox, QPushButton, QVBoxLayout,  QFileDialog
+from PyQt5.QtWidgets import QLabel, QTimeEdit, QPushButton, QVBoxLayout, QFileDialog, QComboBox
 
 from src.widgets.ProfileEditor import ProfileEditor
 
 
 class SlopeProfileEditor(ProfileEditor):
+    SLOPE_OPTIONS = [-20, -15, -10, -5, 0, 5, 10, 15, 20]
     """
     Version of ProfileEditor that operates on slopes rather than absolute Y values.
-    Removes/disables interpolation, as all implementations rely on on-device ramping.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,7 +25,7 @@ class SlopeProfileEditor(ProfileEditor):
     def _on_spinbox_value_changed(self):
         self._update_plot()
 
-    def _add_spinbox_pair(
+    def _add_input_pair(
             self,
             default_x: Union[QTime, NoneType] = QTime(0, 1),
             default_y: Union[float, NoneType] = None
@@ -41,25 +41,20 @@ class SlopeProfileEditor(ProfileEditor):
         y_label.setFixedWidth(25)
 
         x_spinbox = QTimeEdit(self)
-        x_spinbox.setDisplayFormat("HH:mm:ss")
-        x_spinbox.setMinimumTime(QTime(0, 0, 1))
-
-        y_spinbox = QDoubleSpinBox(self)
-        y_spinbox.setRange(-10000, 10000)
-        y_spinbox.setSuffix(f" {self.y_spinbox_suffix}/m")
-        x_spinbox.setMinimumWidth(80)
-        y_spinbox.setMinimumWidth(80)
-
+        x_spinbox.setDisplayFormat("HH:mm")
+        x_spinbox.setMinimumTime(QTime(0, 1))
         x_spinbox.setTime(default_x)
-
-        # Get the default y value, which will be self.LOWER_BOUND for the first spinbox,
-        # and the previous spinbox value for other cases
-        if default_y is None:
-            default_y = self.lower_y_bound if not self.y_spin_boxes else self.y_spin_boxes[-1].value()
-        y_spinbox.setValue(default_y)
-
         self.x_spin_boxes.append(x_spinbox)
-        self.y_spin_boxes.append(y_spinbox)
+
+        y_combobox = QComboBox(self)
+        for option in self.SLOPE_OPTIONS:
+            y_combobox.addItem(
+                f"{option} W/min",
+                userData=option
+            )
+        y_combobox.setMinimumWidth(80)
+
+        self.y_inputs.append(y_combobox)
 
         # Add the remove button to each pair
         remove_button = QPushButton("-")
@@ -67,10 +62,10 @@ class SlopeProfileEditor(ProfileEditor):
         remove_button.setToolTip("Remove point")
         remove_button.clicked.connect(lambda: self._on_remove_button_clicked(pair_layout))
 
-        pair_layout.addWidget(QLabel(f"X{index} (hh:mm:ss)"))
+        pair_layout.addWidget(QLabel(f"X{index} (hh:mm)"))
         pair_layout.addWidget(x_spinbox)
         pair_layout.addWidget(QLabel(f"dY/dX{index}"))
-        pair_layout.addWidget(y_spinbox)
+        pair_layout.addWidget(y_combobox)
         if index != 1:
             # We don't want the first point to be removable
             pair_layout.addWidget(remove_button)
@@ -80,7 +75,7 @@ class SlopeProfileEditor(ProfileEditor):
         self.pairs_layout.insertLayout(self.pairs_layout.count() - 1, pair_layout)
 
         x_spinbox.timeChanged.connect(self._on_spinbox_value_changed)
-        y_spinbox.valueChanged.connect(self._on_spinbox_value_changed)
+        y_combobox.currentTextChanged.connect(self._on_spinbox_value_changed)
 
         # Check if the plot has been created, then update it with the new data point
         if hasattr(self, "profile_plot"):
@@ -93,14 +88,14 @@ class SlopeProfileEditor(ProfileEditor):
         pass
 
     def _update_interpolated_values(self):
-        if not self.x_spin_boxes or not self.y_spin_boxes:
+        if not self.x_spin_boxes or not self.y_inputs:
             return
 
         # Get the current data that needs to be interpolated
         x_data = [sb.time() for sb in self.x_spin_boxes]
         # Convert QTimes into milliseconds for QTimers
         x_data = [t.hour() * 60 + t.minute() + t.second() / 60 for t in x_data]
-        y_data = [sb.value() for sb in self.y_spin_boxes]
+        y_data = [sb.currentData() for sb in self.y_inputs]
 
         absolute_x = [sum(x_data[:i]) for i in range(0, len(x_data))]
 
@@ -130,7 +125,7 @@ class SlopeProfileEditor(ProfileEditor):
             # Convert the string time into a QTime instance
             hh, mm, ss = (int(v) for v in x.split(sep=":"))
             x_qtime = QTime(hh, mm, ss)
-            self._add_spinbox_pair(x_qtime, y)
+            self._add_input_pair(x_qtime, y)
 
         # Redraw the plot
         self._update_plot()
@@ -138,7 +133,7 @@ class SlopeProfileEditor(ProfileEditor):
     def _update_plot(self):
         # Get the user input from spinboxes
         x_values = [spinbox.time() for spinbox in self.x_spin_boxes]
-        slopes = [spinbox.value() for spinbox in self.y_spin_boxes]
+        slopes = [combobox.currentData() for combobox in self.y_inputs]
 
         absolute_x_values = [0]
         y_values = [0]
@@ -147,16 +142,13 @@ class SlopeProfileEditor(ProfileEditor):
             # Current slope for this segment
             current_slope = slopes[i]
 
-            # Calculate the ending x-value for this segment based on the time
-            time = x_values[i]
-            delta_x = time.hour() * 60 + time.minute() + time.second() / 60.0
-            end_x = absolute_x_values[-1] + delta_x
+            interval = x_values[i].hour() * 60 + x_values[i].minute()
+            y_delta = int(current_slope/5)
 
-            # Append ending point of the segment
-            delta_y = current_slope * delta_x
-            new_y = y_values[-1] + delta_y
-            absolute_x_values.append(end_x)
-            y_values.append(np.clip(new_y, a_min=self.lower_y_bound, a_max=self.upper_y_bound))
+            # Divide the given time into 12-second segments (assuming t mod 12 = 0)
+            for t in range(int(interval/0.2)):
+                absolute_x_values.append(absolute_x_values[-1] + 0.2)
+                y_values.append(np.clip(y_values[-1] + y_delta, a_min=self.lower_y_bound, a_max=self.upper_y_bound))
 
         # Update the profile scatter plot data
         if absolute_x_values and y_values:
@@ -164,11 +156,10 @@ class SlopeProfileEditor(ProfileEditor):
 
         # Update the line plot and text annotations
         self.profile_plot.update_line_plot()
-        self.profile_plot.update_text_annotations()
 
         # Redraw the canvas
         self.profile_plot.profile_scatter.figure.canvas.draw()
-        
+
     def _on_remove_button_clicked(self, calling_layout: QVBoxLayout):
         while calling_layout.count():
             widget = calling_layout.takeAt(0).widget()
@@ -178,11 +169,7 @@ class SlopeProfileEditor(ProfileEditor):
 
         # Remove data from lists and update the plot
         self.x_spin_boxes.pop(calling_layout.pair_index - 1).deleteLater()
-        self.y_spin_boxes.pop(calling_layout.pair_index - 1).deleteLater()
-
-        # Remove the text annotation for the deleted point
-        self.profile_plot.text_annotations[calling_layout.pair_index - 1].set_visible(False)
-        del self.profile_plot.text_annotations[calling_layout.pair_index - 1]
+        self.y_inputs.pop(calling_layout.pair_index - 1).deleteLater()
 
         # Renumbering the labels for the spinbox pairs after the removed one
         for idx, pair_layout in enumerate(self._iter_layout(self.pairs_layout)):
@@ -200,7 +187,7 @@ class SlopeProfileEditor(ProfileEditor):
     def get_profile_data(self) -> Tuple[List[float], List[float]]:
         return (
             [self._qtimeedit_time_to_minutes(sb.time()) for sb in self.x_spin_boxes],
-            [sb.value() for sb in self.y_spin_boxes]
+            [sb.value() for sb in self.y_inputs]
         )
 
     def get_profile_data_on_plot(self) -> List[Tuple[float, float]]:
