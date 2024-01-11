@@ -19,6 +19,9 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
 
     homeSearchStepReady = pyqtSignal(str)
     homeSearchStatusReady = pyqtSignal(str)
+    currentOperationReady = pyqtSignal(str)
+    velocityReady = pyqtSignal(int)
+    actualPositionReady = pyqtSignal(int)
 
     class StepperOperatingMode(Enum):
         SERVO_MODE = 1
@@ -91,7 +94,7 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
     def get_angle_from_steps(self, position: int) -> float:
         return float((position - self.conversion_function_offset) / self.conversion_function_coefficient)
 
-    def execute_home_search(self, init_speed: int, shift_steps: int, creep_speed: int, timeout: int = 600) -> bool:
+    def execute_home_search(self, timeout: int = 600) -> bool:
         """
         Try to home position as precisely as possible, by
          Step 1. Moving fast towards the hard limit at init_speed
@@ -108,6 +111,10 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
 
         :return: bool whether the process was successful
         """
+        init_speed = self.settings.value(f"{self.internal_id}/home_search/initial_speed")
+        shift_steps = self.settings.value(f"{self.internal_id}/home_search/move_away_steps")
+        creep_speed = self.settings.value(f"{self.internal_id}/home_search/slow_speed")
+
         start_time = time.time()
 
         self.logger.info("Step 1: fast home to datum")
@@ -123,8 +130,16 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
             if time.time() - start_time >= timeout:
                 raise TimeoutError("Home search process timed out")
             time.sleep(5)
+
             current_operation = self.display_current_operation()
-            self.logger.debug(f"Current operation: {current_operation}".encode())
+            self.currentOperationReady.emit(current_operation)
+
+            current_velocity = self.output_velocity()
+            self.velocityReady.emit(current_velocity)
+
+            current_position = self.output_command_position()
+            self.actualPositionReady.emit(current_position)
+
             self.homeSearchStatusReady.emit(current_operation)
 
         # Step 2
@@ -142,14 +157,42 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
             if time.time() - start_time >= timeout:
                 raise TimeoutError("Home search process timed out")
             time.sleep(5)
+
             current_operation = self.display_current_operation()
-            self.logger.debug(f"Current operation: {current_operation}".encode())
+            self.currentOperationReady.emit(current_operation)
+
+            current_velocity = self.output_velocity()
+            self.velocityReady.emit(current_velocity)
+
+            current_position = self.output_command_position()
+            self.actualPositionReady.emit(current_position)
+
             self.homeSearchStatusReady.emit(current_operation)
 
         # Step 3
         self.logger.info("Step 3: slow home to datum")
         self.homeSearchStepReady.emit("Step 3: slow home to datum")
         self.go_home_to_datum(False)
+        current_operation = self.display_current_operation()
+
+        self.logger.debug(f"Current operation: {current_operation}".encode())
+        self.homeSearchStatusReady.emit(current_operation)
+
+        while "home" in current_operation.lower() or "datum" in current_operation.lower():
+            if time.time() - start_time >= timeout:
+                raise TimeoutError("Home search process timed out")
+            time.sleep(5)
+
+            current_operation = self.display_current_operation()
+            self.currentOperationReady.emit(current_operation)
+
+            current_velocity = self.output_velocity()
+            self.velocityReady.emit(current_velocity)
+
+            current_position = self.output_command_position()
+            self.actualPositionReady.emit(current_position)
+
+            self.homeSearchStatusReady.emit(current_operation)
 
         self.logger.info("Home search finished")
         self.homeSearchStepReady.emit("Finished")

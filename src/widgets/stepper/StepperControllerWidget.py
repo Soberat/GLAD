@@ -10,9 +10,9 @@ class StepperControllerWidget(DeviceWidgetBase):
     def __init__(self, internal_id: str, mock: bool = False):
         super().__init__(internal_id, StepperControllerWorker, mock)
 
-        self.worker.currentOperationReady.connect(self._on_current_operation_ready)
-        self.worker.velocityReady.connect(self._on_velocity_ready)
-        self.worker.actualPositionReady.connect(self._on_actual_position_ready)
+        self.worker.device.currentOperationReady.connect(self._on_current_operation_ready)
+        self.worker.device.velocityReady.connect(self._on_velocity_ready)
+        self.worker.device.actualPositionReady.connect(self._on_actual_position_ready)
         self.worker.device.homeSearchStepReady.connect(self._on_home_search_step_ready)
         self.worker.device.homeSearchStatusReady.connect(self._on_home_search_status_ready)
 
@@ -229,5 +229,5 @@ class StepperControllerWidget(DeviceWidgetBase):
 
     def _on_home_search_button_clicked(self):
         self.worker.add_task(
-            lambda: self.worker.device.execute_home_search(1000, 500, 50)
+            lambda: self.worker.device.execute_home_search()
         )
