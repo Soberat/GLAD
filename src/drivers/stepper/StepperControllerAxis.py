@@ -76,6 +76,9 @@ class StepperControllerAxis(SerialDeviceBase, QObject):
         return "OK" in readback.upper()
 
     def read(self, command):
+        if self.serial.in_waiting:
+            self.logger.warning(f"Bytes in waiting before command: {self.serial.read(self.serial.in_waiting)}")
+
         self.logger.debug(f"Read command: {self.axis_number}{command}")
         self.serial.write(f"{self.axis_number}{command}\r".encode("utf-8"))
         readback = self.serial.read_until()

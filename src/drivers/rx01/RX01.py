@@ -41,6 +41,9 @@ class RX01(SerialDeviceBase):
         self.rf_output_enabled = False
 
     def __write_and_read(self, command: str, expected_response: Union[str, None] = "\r") -> Union[str, bool]:
+        if self.serial.in_waiting:
+            self.logger.warning(f"Bytes in waiting before command: {self.serial.read(self.serial.in_waiting)}")
+
         self.logger.debug(f"Writing {command}")
         self.serial.write(f"{command}\r".encode())
         response = self.serial.read_until(b"\r").decode()

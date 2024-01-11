@@ -39,6 +39,9 @@ class PD500X1(SerialDeviceBase):
         self.__write_and_read("S01")
 
     def __write_and_read(self, command: str, expected_response: Union[str, None] = "OK\r\n") -> Union[str, bool]:
+        if self.serial.in_waiting:
+            self.logger.warning(f"Bytes in waiting before command: {self.serial.read(self.serial.in_waiting)}")
+
         self.logger.debug(f"Writing {command}")
         self.serial.write(f"{command}\r".encode())
         response = self.serial.read(20).decode()
